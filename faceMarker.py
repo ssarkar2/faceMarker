@@ -53,17 +53,19 @@ IMAGE_FORMATS=[".JPG",".PNG",".PPM",".PGM",".GIF",".TIF",".TIFF",]
 
 class EyePickerFrame(wx.Frame):
 
-    def __init__(self,parent,id,name,image_dir,n_points=None,randomize=False,scale=1.0):
+    def __init__(self,parent,id,name,image_key,n_points=None,randomize=False,scale=1.0):
         wx.Frame.__init__(self,parent,id,name)
 
         # ---------------- Basic Data -------------------
-        self.image_dir = image_dir
+        self.image_key = image_key
         self.n_points = n_points
         self.image_names = []
         self.current_image = None
         self.image_name = None
         self.scale = scale
-        for name in os.listdir(image_dir):
+        with open(image_key, 'r') as content_file:
+            content = content_file.read()
+        for name in content.split('\n'):
             for format in IMAGE_FORMATS:
                 if name.upper().endswith(format):
                     self.image_names.append(name)
@@ -186,7 +188,7 @@ class EyePickerFrame(wx.Frame):
         if not self.coords.has_key(self.image_name):
             self.coords[self.image_name] = []
 
-        filename = os.path.join(self.image_dir,self.image_name)
+        filename = os.path.join(self.image_key,self.image_name)
         self.current_image = wx.Image(filename)
         self.first_click = True
         self.DisplayImage()
@@ -208,7 +210,6 @@ class EyePickerFrame(wx.Frame):
 
             #self.scale = min(tw/float(sw),th/float(sh))
 
-
             tw = int(sw*self.scale)
             th = int(sh*self.scale)
 
@@ -228,7 +229,6 @@ class EyePickerFrame(wx.Frame):
                 i += 1
 
             del bmdc
-
             self.static_bitmap.SetBitmap(bm)
 
 
@@ -266,15 +266,12 @@ class EyePickerFrame(wx.Frame):
             self.coords[self.image_name][self.moving] = (x,y,)
             self.DisplayImage()
 
-
     def onRelease(self,event):
         x = event.GetX()/self.scale
         y = event.GetY()/self.scale
-
         if self.moving != None:
             self.coords[self.image_name][self.moving] = (x,y,)
             self.DisplayImage()
-
         self.moving = None
 
     def onAbout(self,event):
@@ -286,16 +283,13 @@ class EyePickerFrame(wx.Frame):
         result = dlg.ShowModal()
         dlg.Destroy()
 
-
     def onOpen(self,event):
         print "Open"
         fd = wx.FileDialog(self,style=wx.FD_OPEN)
         fd.ShowModal()
         self.filename = fd.GetPath()
         print "On Open...",self.filename
-
         self.openCSVFile(self.filename)
-
 
     def onSave(self,event):
         if self.filename == None:
@@ -325,7 +319,6 @@ class EyePickerFrame(wx.Frame):
         event.Skip()
 
 
-
 def ask(parent=None, message='', default_value=''):
     dlg = wx.TextEntryDialog(parent, message, defaultValue=default_value, style=wx.OK)
     dlg.ShowModal()
@@ -336,14 +329,14 @@ def ask(parent=None, message='', default_value=''):
 if __name__ == '__main__':
     app = wx.App(False)
 
-    image_dir = ask(message = 'Please select a directory that contains images.', default_value = 'C:\Sayantan\project\sem4\\faceannotate\\faces')
-    print "Image Dir",image_dir
+    image_key = ask(message = 'Please select a file that contains images locations.', default_value = 'C:\Sayantan\project\sem4\\faceannotate\\keyfile.txt')
+    print "Image Dir",image_key
 
     num_points = ask(message = 'Please enter number of landmark points', default_value = '7')
     print "Number of points",num_points
 
     scale = 1.0
 
-    frame = EyePickerFrame(None, wx.ID_ANY, "Eye Selector",image_dir,n_points=None,randomize=True,scale=scale)
+    frame = EyePickerFrame(None, wx.ID_ANY, "Eye Selector",image_key,n_points=None,randomize=True,scale=scale)
     frame.Show(True)
     app.MainLoop()
