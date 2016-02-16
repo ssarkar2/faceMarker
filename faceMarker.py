@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # PyVision License
 #
-# Copyright (c) 2006-2008 David S. Bolme
+# Copyright (c) 2006-2008 David S. Bolme, Sayantan Sarkar, Ananya Mukherjee
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,8 @@ The image is clicked on to select the eye coordinates.
 Eye coordinates are saved to a file.
 '''
 
+#references: http://wiki.wxpython.org/Getting%20Started
+
 IMAGE_FORMATS=[".JPG",".PNG",".PPM",".PGM",".GIF",".TIF",".TIFF",]
 
 class EyePickerFrame(wx.Frame):
@@ -77,12 +79,14 @@ class EyePickerFrame(wx.Frame):
 
         filemenu= wx.Menu()
         id_about = wx.NewId()
+        id_help = wx.NewId()
         id_open = wx.NewId()
         id_save = wx.NewId()
         id_save_as = wx.NewId()
         id_exit  = wx.NewId()
         # File Menu
         filemenu.Append(wx.ID_ABOUT, wx.EmptyString)
+        filemenu.Append(wx.ID_HELP, wx.EmptyString)
         filemenu.AppendSeparator()
         filemenu.Append(wx.ID_OPEN, wx.EmptyString)
         filemenu.Append(wx.ID_SAVE, wx.EmptyString)
@@ -103,10 +107,15 @@ class EyePickerFrame(wx.Frame):
         self.static_bitmap = wx.StaticBitmap(self,wx.NewId(), bitmap=wx.EmptyBitmap(300, 300))
         self.static_bitmap.SetCursor(wx.CROSS_CURSOR)
 
+        # --------------- Comments/Prompts -----------------
+        self.static_text = wx.StaticText(self, 2, 'helloworld')
+        #wxStaticText(panel, -1, "Size:", wxDLG_PNT(panel, wxPoint(4, 4)),  wxDefaultSize)
+
         # --------------- Window Layout -----------------
         box = wx.BoxSizer(wx.HORIZONTAL)
         box.Add(self.list, 1, wx.EXPAND)
         box.Add(self.static_bitmap, 3, wx.EXPAND)
+        box.Add(self.static_text,2, wx.EXPAND)
 
         self.SetAutoLayout(True)
         self.SetSizer(box)
@@ -125,13 +134,13 @@ class EyePickerFrame(wx.Frame):
         wx.EVT_MENU(self,wx.ID_SAVEAS,self.onSaveAs)
 
         wx.EVT_MENU(self,wx.ID_ABOUT,self.onAbout)
+        wx.EVT_MENU(self,wx.ID_HELP,self.onHelp)
         #wx.EVT_MENU(self,wx.ID_EXIT,self.onExit)
 
         wx.EVT_CLOSE(self,self.onClose)
 
 
     def openCSVFile(self,path):
-
         reader = csv.reader(open(path, "rb"))
         first = True
         eyes = False
@@ -150,13 +159,7 @@ class EyePickerFrame(wx.Frame):
                 points.append(point)
 
             coords[filename] = points
-
-
-
-
-
         print "CSV File Data: ", coords
-
         self.coords = coords
 
     def save(self,path):
@@ -192,9 +195,7 @@ class EyePickerFrame(wx.Frame):
     def onBitmapResize(self,event):
         w = event.GetSize().GetWidth()
         h = event.GetSize().GetHeight()
-
         self.static_bitmap.SetSize(event.GetSize())
-
         self.DisplayImage()
 
 
@@ -277,8 +278,13 @@ class EyePickerFrame(wx.Frame):
         self.moving = None
 
     def onAbout(self,event):
-        dlg = wx.MessageDialog(self,message="For more information visit:\n\nhttp://pyvision.sourceforge.net",style = wx.OK )
+        dlg = wx.MessageDialog(self,message="For more information visit:\nhttps://github.com/ssarkar2/faceMarker",style = wx.OK )
         result = dlg.ShowModal()
+
+    def onHelp(self, event):
+        dlg = wx.MessageDialog(self, 'Instructions:\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter the (max) number of landmarks that will be marked for each image ', style=wx.OK)
+        result = dlg.ShowModal()
+        dlg.Destroy()
 
 
     def onOpen(self,event):
@@ -319,18 +325,23 @@ class EyePickerFrame(wx.Frame):
         event.Skip()
 
 
+
+def ask(parent=None, message='', default_value=''):
+    dlg = wx.TextEntryDialog(parent, message, defaultValue=default_value, style=wx.OK)
+    dlg.ShowModal()
+    result = dlg.GetValue()
+    dlg.Destroy()
+    return result
+
 if __name__ == '__main__':
     app = wx.App(False)
 
-    dir_dialog = wx.DirDialog(None, message = "Please select a directory that contains images.")
-    err = dir_dialog.ShowModal()
-    image_dir = '.'
-    if(err == wx.ID_OK):
-        image_dir = dir_dialog.GetPath()
-    else:
-        print "Error getting path:",err
-
+    image_dir = ask(message = 'Please select a directory that contains images.', default_value = 'C:\Sayantan\project\sem4\\faceannotate\\faces')
     print "Image Dir",image_dir
+
+    num_points = ask(message = 'Please enter number of landmark points', default_value = '7')
+    print "Number of points",num_points
+
     scale = 1.0
 
     frame = EyePickerFrame(None, wx.ID_ANY, "Eye Selector",image_dir,n_points=None,randomize=True,scale=scale)
