@@ -53,7 +53,7 @@ IMAGE_FORMATS=[".JPG",".PNG",".PPM",".PGM",".GIF",".TIF",".TIFF",]
 
 class EyePickerFrame(wx.Frame):
 
-    def __init__(self,parent,id,name,image_key,n_points=None,randomize=False,scale=1.0, landmarkNames = ''):
+    def __init__(self,parent,id,name,image_key,n_points=None,randomize=False,scale=1.0, landmarkNames = '', startpoint = 0):
         wx.Frame.__init__(self,parent,id,name)
 
         # ---------------- Basic Data -------------------
@@ -66,7 +66,7 @@ class EyePickerFrame(wx.Frame):
         self.landmarkNames = landmarkNames
         with open(image_key, 'r') as content_file:
             content = content_file.read()
-        for name in content.split('\n'):
+        for name in content.split('\n')[startpoint:]:
             for format in IMAGE_FORMATS:
                 if name.upper().endswith(format):
                     self.image_names.append(name)
@@ -110,7 +110,7 @@ class EyePickerFrame(wx.Frame):
         self.static_bitmap.SetCursor(wx.CROSS_CURSOR)
 
         # --------------- Comments/Prompts -----------------
-        self.static_text = wx.StaticText(self, 2, 'helloworld')
+        self.static_text = wx.StaticText(self, 2, 'Click on an image in the left pane')
         #wxStaticText(panel, -1, "Size:", wxDLG_PNT(panel, wxPoint(4, 4)),  wxDefaultSize)
 
         # --------------- Window Layout -----------------
@@ -357,6 +357,9 @@ if __name__ == '__main__':
     image_key = ask(message = 'Please select a file that contains images locations.', default_value = 'C:\Sayantan\project\sem4\\faceannotate\\keyfile.txt')
     print "Image Dir",image_key
 
+    start = ask(message = 'Please enter start point in the file', default_value = '0')
+    print "Start point",start
+
     num_points = int(ask(message = 'Please enter number of landmark points', default_value = '7'))
     print "Number of points",num_points
 
@@ -365,6 +368,6 @@ if __name__ == '__main__':
 
     scale = 1.0
 
-    frame = EyePickerFrame(None, wx.ID_ANY, "Landmark Annotation",image_key,n_points=num_points,randomize=True,scale=scale, landmarkNames = landmark_names)
+    frame = EyePickerFrame(None, wx.ID_ANY, "Landmark Annotation",image_key,n_points=num_points,randomize=True,scale=scale, landmarkNames = landmark_names, startpoint = int(start))
     frame.Show(True)
     app.MainLoop()
