@@ -38,22 +38,22 @@ import os.path
 import csv
 import random
 '''
-This program is a simple gui for selecting eye coordinates for a
+This program is a simple gui for selecting landmarks for a
 set of images.
-The program takes a directory as an argument.
+The program takes a file with image locations as an argument.
 It loads each image in that directory into a list frame.
 It displays the image in the frame.
-The image is clicked on to select the eye coordinates.
-Eye coordinates are saved to a file.
+The image is clicked on to select the landmark coordinates.
+landmark coordinates are saved to a file.
 '''
 
-#references: http://wiki.wxpython.org/Getting%20Started
+#GUI references: http://wiki.wxpython.org/Getting%20Started
 
 IMAGE_FORMATS=[".JPG",".PNG",".PPM",".PGM",".GIF",".TIF",".TIFF",]
 
 class EyePickerFrame(wx.Frame):
 
-    def __init__(self,parent,id,name,image_key,n_points=None,randomize=False,scale=1.0):
+    def __init__(self,parent,id,name,image_key,n_points=None,randomize=False,scale=1.0, landmarkNames = ''):
         wx.Frame.__init__(self,parent,id,name)
 
         # ---------------- Basic Data -------------------
@@ -63,6 +63,7 @@ class EyePickerFrame(wx.Frame):
         self.current_image = None
         self.image_name = None
         self.scale = scale
+        self.landmarkNames = landmarkNames
         with open(image_key, 'r') as content_file:
             content = content_file.read()
         for name in content.split('\n'):
@@ -99,7 +100,6 @@ class EyePickerFrame(wx.Frame):
         menuBar = wx.MenuBar()
         menuBar.Append(filemenu,"&File") # Adding the "filemenu" to the MenuBar
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
-
 
         # ----------------- Image List ------------------
         self.list=wx.ListBox(self,wx.NewId(),style=wx.LC_REPORT|wx.SUNKEN_BORDER,choices=self.image_names)
@@ -269,10 +269,11 @@ class EyePickerFrame(wx.Frame):
     def onRelease(self,event):
         x = event.GetX()/self.scale
         y = event.GetY()/self.scale
-        if self.moving != None:
+        if self.moving != None and len(self.coords[self.image_name]) < self.n_points:
             self.coords[self.image_name][self.moving] = (x,y,)
             self.DisplayImage()
         self.moving = None
+        self.static_text.SetLabel("foobar")
 
     def onAbout(self,event):
         dlg = wx.MessageDialog(self,message="For more information visit:\nhttps://github.com/ssarkar2/faceMarker",style = wx.OK )
@@ -332,11 +333,14 @@ if __name__ == '__main__':
     image_key = ask(message = 'Please select a file that contains images locations.', default_value = 'C:\Sayantan\project\sem4\\faceannotate\\keyfile.txt')
     print "Image Dir",image_key
 
-    num_points = ask(message = 'Please enter number of landmark points', default_value = '7')
+    num_points = int(ask(message = 'Please enter number of landmark points', default_value = '7'))
     print "Number of points",num_points
+
+    landmark_names = ask(message = 'Please enter names of landmark points', default_value = 'top left, bottom right, left eye, right eye, nose, left mouth tip, right mouth tip')
+    print "Landmarks",landmark_names
 
     scale = 1.0
 
-    frame = EyePickerFrame(None, wx.ID_ANY, "Eye Selector",image_key,n_points=None,randomize=True,scale=scale)
+    frame = EyePickerFrame(None, wx.ID_ANY, "Landmark Annotation",image_key,n_points=num_points,randomize=True,scale=scale, landmarkNames = landmark_names)
     frame.Show(True)
     app.MainLoop()
