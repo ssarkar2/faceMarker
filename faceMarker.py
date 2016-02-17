@@ -129,6 +129,8 @@ class EyePickerFrame(wx.Frame):
         wx.EVT_LEFT_DOWN(self.static_bitmap, self.onClick)
         wx.EVT_LEFT_UP(self.static_bitmap, self.onRelease)
         wx.EVT_MOTION(self.static_bitmap, self.onMotion)
+        wx.EVT_RIGHT_DOWN(self.static_bitmap, self.onRightClick)
+        wx.EVT_RIGHT_UP(self.static_bitmap, self.onRightRelease)
         self.moving = None
 
         wx.EVT_MENU(self,wx.ID_OPEN,self.onOpen)
@@ -163,6 +165,7 @@ class EyePickerFrame(wx.Frame):
             coords[filename] = points
         print "CSV File Data: ", coords
         self.coords = coords
+
 
     def save(self,path):
         ''' Save the coords to a csv file. '''
@@ -224,9 +227,10 @@ class EyePickerFrame(wx.Frame):
 
             i = 1
             for point in self.coords[self.image_name]:
-                bmdc.DrawCircle(self.scale*point[0], self.scale*point[1], 5)
-                w,h = bmdc.GetTextExtent(str(i))
-                bmdc.DrawText(str(i),self.scale*point[0]-w/2, self.scale*point[1]+5)
+                if point[0] >= 0 and point[1] >= 0:
+                    bmdc.DrawCircle(self.scale*point[0], self.scale*point[1], 5)
+                    w,h = bmdc.GetTextExtent(str(i))
+                    bmdc.DrawText(str(i),self.scale*point[0]-w/2, self.scale*point[1]+5)
                 i += 1
 
             del bmdc
@@ -259,6 +263,7 @@ class EyePickerFrame(wx.Frame):
             self.moving = len(self.coords[self.image_name]) - 1
             self.DisplayImage()
 
+
     def onMotion(self,event):
         x = event.GetX()/self.scale
         y = event.GetY()/self.scale
@@ -266,6 +271,7 @@ class EyePickerFrame(wx.Frame):
         if self.moving != None:
             self.coords[self.image_name][self.moving] = (x,y,)
             self.DisplayImage()
+
 
     def onRelease(self,event):
         x = event.GetX()/self.scale
@@ -276,14 +282,29 @@ class EyePickerFrame(wx.Frame):
         self.moving = None
         self.static_text.SetLabel(landmark_names.split(',')[len(self.coords[self.image_name])] if len(self.coords[self.image_name]) < self.n_points else 'done')
 
+
+    def onRightClick(self,event):
+        print 'right clk'
+
+
+    def onRightRelease(self,event):
+        if len(self.coords[self.image_name]) < self.n_points:
+            self.coords[self.image_name].append((-1,-1,))
+            self.DisplayImage()
+        self.static_text.SetLabel(landmark_names.split(',')[len(self.coords[self.image_name])] if len(self.coords[self.image_name]) < self.n_points else 'done')
+        print 'right release'
+
+
     def onAbout(self,event):
         dlg = wx.MessageDialog(self,message="For more information visit:\nhttps://github.com/ssarkar2/faceMarker",style = wx.OK )
         result = dlg.ShowModal()
+
 
     def onHelp(self, event):
         dlg = wx.MessageDialog(self, 'Instructions:\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter the (max) number of landmarks that will be marked for each image ', style=wx.OK)
         result = dlg.ShowModal()
         dlg.Destroy()
+
 
     def onOpen(self,event):
         print "Open"
@@ -293,6 +314,7 @@ class EyePickerFrame(wx.Frame):
         print "On Open...",self.filename
         self.openCSVFile(self.filename)
 
+
     def onSave(self,event):
         if self.filename == None:
             # In this case perform a "Save As"
@@ -300,12 +322,14 @@ class EyePickerFrame(wx.Frame):
         else:
             self.save(self.filename)
 
+
     def onSaveAs(self,event):
         fd = wx.FileDialog(self,message="Save the coordinates as...",style=wx.FD_SAVE,
                            wildcard="Comma separated value (*.csv)|*.csv")
         fd.ShowModal()
         self.filename = fd.GetPath()
         self.save(self.filename)
+
 
     def onClose(self,event):
         dlg = wx.MessageDialog(self,message="Would you like to save the coordinates before exiting?",style = wx.YES_NO | wx.YES_DEFAULT)
