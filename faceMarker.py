@@ -192,6 +192,7 @@ class EyePickerFrame(wx.Frame):
         self.current_image = wx.Image(filename)
         self.first_click = True
         self.DisplayImage()
+        self.static_text.SetLabel(landmark_names.split(',')[0])
 
 
     def onBitmapResize(self,event):
@@ -273,7 +274,7 @@ class EyePickerFrame(wx.Frame):
             self.coords[self.image_name][self.moving] = (x,y,)
             self.DisplayImage()
         self.moving = None
-        self.static_text.SetLabel("foobar")
+        self.static_text.SetLabel(landmark_names.split(',')[len(self.coords[self.image_name])] if len(self.coords[self.image_name]) < self.n_points else 'done')
 
     def onAbout(self,event):
         dlg = wx.MessageDialog(self,message="For more information visit:\nhttps://github.com/ssarkar2/faceMarker",style = wx.OK )
@@ -304,7 +305,6 @@ class EyePickerFrame(wx.Frame):
                            wildcard="Comma separated value (*.csv)|*.csv")
         fd.ShowModal()
         self.filename = fd.GetPath()
-
         self.save(self.filename)
 
     def onClose(self,event):
