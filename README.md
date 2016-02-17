@@ -8,10 +8,5 @@ a file with image locations
 output:
 a file with landmarks/bounding box
 
-landmarks:
-topleft, bottomright, left eye, right eye, nose tip, left mouth tip, right mouth tip
+See help in teh file menu of the GUI for more details
 
-todo:
-attribute marking?
-handle partial face
-prompts for landmark annotation.
