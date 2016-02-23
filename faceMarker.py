@@ -189,7 +189,8 @@ class EyePickerFrame(wx.Frame):
             if self.n_points != None and len(self.coords[self.image_name]) != self.n_points:
                 print "ERROR: incorrect number of points."
 
-        self.image_name = ''.join(event.GetString().split(' ')[1:]) #get the string, split it on space. discard the 1st entry join the rest. The joining is there, in case space appears inside the file name
+        s = event.GetString()
+        self.image_name = s[s.index(' ')+1:]
 
         if not self.coords.has_key(self.image_name):
             self.coords[self.image_name] = []
