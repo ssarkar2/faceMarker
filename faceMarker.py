@@ -66,10 +66,12 @@ class EyePickerFrame(wx.Frame):
         self.landmarkNames = landmarkNames
         with open(image_key, 'r') as content_file:
             content = content_file.read()
+
         for name in content.split('\n')[startpoint:]:
             for format in IMAGE_FORMATS:
                 if name.upper().endswith(format):
                     self.image_names.append(name)
+
         if randomize:
             random.shuffle(self.image_names)
         self.filename = None
@@ -102,7 +104,8 @@ class EyePickerFrame(wx.Frame):
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
 
         # ----------------- Image List ------------------
-        self.list=wx.ListBox(self,wx.NewId(),style=wx.LC_REPORT|wx.SUNKEN_BORDER,choices=self.image_names)
+        self.list=wx.ListBox(self,wx.NewId(),style=wx.LC_REPORT|wx.SUNKEN_BORDER,choices=[str(i+startpoint) + ' ' + self.image_names[i] for i in range(0,len(self.image_names))])
+        #self.list=wx.ListBox(self,wx.NewId(),style=wx.LC_REPORT|wx.SUNKEN_BORDER,choices=self.image_names)
         self.list.Show(True)
 
         # --------------- Image Display -----------------
@@ -186,7 +189,7 @@ class EyePickerFrame(wx.Frame):
             if self.n_points != None and len(self.coords[self.image_name]) != self.n_points:
                 print "ERROR: incorrect number of points."
 
-        self.image_name = event.GetString()
+        self.image_name = ''.join(event.GetString().split(' ')[1:]) #get the string, split it on space. discard the 1st entry join the rest. The joining is there, in case space appears inside the file name
 
         if not self.coords.has_key(self.image_name):
             self.coords[self.image_name] = []
@@ -301,7 +304,7 @@ class EyePickerFrame(wx.Frame):
 
 
     def onHelp(self, event):
-        dlg = wx.MessageDialog(self, 'Instructions:\n Starting off\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter the (max) number of landmarks that will be marked for each image\n 3. In the third enter names of the landmarks separated by \',\' \n\n Operations\n 1. select landmarks with single left click. The right pane shows a prompt which landmark to select now.\n 2. Right click anywhere on the image to ignore/skip a landmark (this is useful for partial faces where some landmarks are not visible)\n 3. The GUI will allow you to only mark \'max\' number of landmarks\n 4. Use up/down or left/right buttons to go to the next image, or click on the image in the image selector pane on the left \n \n Other features \n 1. Save the landmarks as a csv file.\n 2. use \'open\' to load a csv that contains landmarks and view them superimposed on the loaded images ', style=wx.OK)
+        dlg = wx.MessageDialog(self, 'Instructions:\n Starting off\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter starting point in the key file 3. In the third enter the (max) number of landmarks that will be marked for each image\n 4. In the fourth enter names of the landmarks separated by \',\' \n 5. In the fifth enter the scaling factor \n\n Operations\n 1. select landmarks with single left click. The right pane shows a prompt which landmark to select now.\n 2. Right click anywhere on the image to ignore/skip a landmark (this is useful for partial faces where some landmarks are not visible)\n 3. The GUI will allow you to only mark \'max\' number of landmarks\n 4. Use up/down or left/right buttons to go to the next image, or click on the image in the image selector pane on the left \n \n Other features \n 1. Save the landmarks as a csv file.\n 2. use \'open\' to load a csv that contains landmarks and view them superimposed on the loaded images ', style=wx.OK)
         result = dlg.ShowModal()
         dlg.Destroy()
 
@@ -366,8 +369,9 @@ if __name__ == '__main__':
     landmark_names = ask(message = 'Please enter names of landmark points', default_value = 'top left, bottom right, left eye, right eye, nose, left mouth tip, right mouth tip')
     print "Landmarks",landmark_names
 
-    scale = 1.0
+    scale = float(ask(message = 'Please enter scale factor (for displaying image)', default_value = '0.5'))
+    print "Scale",scale
 
-    frame = EyePickerFrame(None, wx.ID_ANY, "Landmark Annotation",image_key,n_points=num_points,randomize=True,scale=scale, landmarkNames = landmark_names, startpoint = int(start))
+    frame = EyePickerFrame(None, wx.ID_ANY, "Landmark Annotation",image_key,n_points=num_points,randomize=False,scale=scale, landmarkNames = landmark_names, startpoint = int(start))
     frame.Show(True)
     app.MainLoop()
