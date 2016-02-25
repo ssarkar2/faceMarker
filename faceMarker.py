@@ -64,6 +64,7 @@ class EyePickerFrame(wx.Frame):
         self.image_name = None
         self.scale = scale
         self.landmarkNames = landmarkNames
+        self.imageOrientation = {}
         with open(image_key, 'r') as content_file:
             content = content_file.read()
 
@@ -127,13 +128,23 @@ class EyePickerFrame(wx.Frame):
         self.Layout()
 
         # -------------- Event Handleing ----------------
-        wx.EVT_LISTBOX(self, self.list.GetId(), self.onSelect)
+        #wx.EVT_LISTBOX(self, self.list.GetId(), self.onSelect)
+        self.list.Bind(wx.EVT_KEY_UP, self.onSelect)
         wx.EVT_SIZE(self.static_bitmap, self.onBitmapResize)
         wx.EVT_LEFT_DOWN(self.static_bitmap, self.onClick)
         wx.EVT_LEFT_UP(self.static_bitmap, self.onRelease)
         wx.EVT_MOTION(self.static_bitmap, self.onMotion)
         wx.EVT_RIGHT_DOWN(self.static_bitmap, self.onRightClick)
         wx.EVT_RIGHT_UP(self.static_bitmap, self.onRightRelease)
+        wx.EVT_MIDDLE_DOWN(self.static_bitmap, self.onMidClick)
+        wx.EVT_MIDDLE_UP(self.static_bitmap, self.onMidRelease)
+        wx.EVT_LEFT_DCLICK(self.static_bitmap, self.onLeftDoubleClick)
+        wx.EVT_KEY_DOWN(self, self.onKeyDown)
+##        self.static_bitmap.Bind(wx.EVT_CHAR_HOOK, self.onKeyDown)
+##        panel = wx.Panel(self, wx.ID_ANY)
+##        btn = wx.Button(panel, label="OK")
+##        btn.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
+
         self.moving = None
 
         wx.EVT_MENU(self,wx.ID_OPEN,self.onOpen)
@@ -181,25 +192,48 @@ class EyePickerFrame(wx.Frame):
             for point in self.coords[key]:
                 row.append(point[0])
                 row.append(point[1])
+            row.append(self.imageOrientation[key])
             writer.writerow(row)
 
 
     def onSelect(self,event):
-        if self.image_name:
-            if self.n_points != None and len(self.coords[self.image_name]) != self.n_points:
-                print "ERROR: incorrect number of points."
+        keypressed = event.GetKeyCode()
+        #print keypressed
 
-        s = event.GetString()
-        self.image_name = s[s.index(' ')+1:]
+        if keypressed == wx.WXK_LEFT or keypressed == wx.WXK_RIGHT or keypressed == wx.WXK_UP or keypressed == wx.WXK_DOWN:
 
-        if not self.coords.has_key(self.image_name):
-            self.coords[self.image_name] = []
+            if self.image_name:
+                if self.n_points != None and len(self.coords[self.image_name]) != self.n_points:
+                    print "ERROR: incorrect number of points."
 
-        filename = os.path.join(self.image_key,self.image_name)
-        self.current_image = wx.Image(filename)
-        self.first_click = True
-        self.DisplayImage()
-        self.static_text.SetLabel(landmark_names.split(',')[0])
+            s = event.GetEventObject().GetSelection()
+            #print s
+
+            self.image_name = self.image_names[s]
+
+            if not self.coords.has_key(self.image_name):
+                self.coords[self.image_name] = []
+
+            filename = os.path.join(self.image_key,self.image_name)
+            self.current_image = wx.Image(filename)
+            self.first_click = True
+            self.DisplayImage()
+            self.static_text.SetLabel(landmark_names.split(',')[0])
+            self.imageOrientation[self.image_name] = 1
+            print 'Orientation = top (default)'
+
+        if keypressed == ord('W') :
+            self.imageOrientation[self.image_name] = 1
+            print 'Orientation = top (default)'
+        if keypressed == ord('A') :
+            self.imageOrientation[self.image_name] = 2
+            print 'Orientation = left'
+        if keypressed == ord('S') :
+            self.imageOrientation[self.image_name] = 3
+            print 'Orientation = right'
+        if keypressed == ord('Z') :
+            self.imageOrientation[self.image_name] = 4
+            print 'Orientation = bottom'
 
 
     def onBitmapResize(self,event):
@@ -288,7 +322,9 @@ class EyePickerFrame(wx.Frame):
 
 
     def onRightClick(self,event):
-        print 'right clk'
+        if self.first_click:
+            self.coords[self.image_name] = []
+            self.first_click = False
 
 
     def onRightRelease(self,event):
@@ -296,7 +332,26 @@ class EyePickerFrame(wx.Frame):
             self.coords[self.image_name].append((-1,-1,))
             self.DisplayImage()
         self.static_text.SetLabel(landmark_names.split(',')[len(self.coords[self.image_name])] if len(self.coords[self.image_name]) < self.n_points else 'done')
-        print 'right release'
+        print 'right release: point ignored'
+
+
+    def onMidClick(self,event):
+        pass
+
+    def onMidRelease(self,event):
+        self.coords[self.image_name] = []
+        self.first_click = True
+        self.DisplayImage()
+        self.static_text.SetLabel(landmark_names.split(',')[0])
+        print('resetting')
+
+    def onLeftDoubleClick(self, event):
+        self.coords[self.image_name] = [(-1,-1)]*self.n_points
+        self.static_text.SetLabel('done')
+        self.DisplayImage()
+
+    def onKeyDown(self, event):
+        pass
 
 
     def onAbout(self,event):
@@ -305,7 +360,8 @@ class EyePickerFrame(wx.Frame):
 
 
     def onHelp(self, event):
-        dlg = wx.MessageDialog(self, 'Instructions:\n Starting off\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter starting point in the key file 3. In the third enter the (max) number of landmarks that will be marked for each image\n 4. In the fourth enter names of the landmarks separated by \',\' \n 5. In the fifth enter the scaling factor \n\n Operations\n 1. select landmarks with single left click. The right pane shows a prompt which landmark to select now.\n 2. Right click anywhere on the image to ignore/skip a landmark (this is useful for partial faces where some landmarks are not visible)\n 3. The GUI will allow you to only mark \'max\' number of landmarks\n 4. Use up/down or left/right buttons to go to the next image, or click on the image in the image selector pane on the left \n \n Other features \n 1. Save the landmarks as a csv file.\n 2. use \'open\' to load a csv that contains landmarks and view them superimposed on the loaded images ', style=wx.OK)
+        dlg = wx.MessageDialog(self, '''Instructions:\n Starting off\n 1. In the first dialog, enter the location of the key file\n 2. In the second enter starting point in the key file 3. In the third enter the (max) number of landmarks that will be marked for each image\n 4. In the fourth enter names of the landmarks separated by \',\' \n 5. In the fifth enter the scaling factor \n\n Operations\n 1. select landmarks with single left click. The right pane shows a prompt which landmark to select now.\n 2. Right click anywhere on the image to ignore/skip a landmark (useful for partial faces where some landmarks are not visible)\n 3. The GUI will allow you to only mark \'max\' number of landmarks\n 4. Use up/down or left/right buttons to go to the next image, or click on the image in the image selector pane on the left \n 5. Use double click to indicate no face. Then move on to the next pic. \n 6. Use middle click to make all landmarks in current pic disappear. You can also go to another pic and come back and start again\n 7. Default orientation is top. press 2 for left (head is to the left, chin to the right on the screen), 3 for right and 4 for bottom (that is face is upside down)
+        \n Other features \n 1. Save the landmarks as a csv file.\n 2. use \'open\' to load a csv that contains landmarks and view them superimposed on the images ''', style=wx.OK)
         result = dlg.ShowModal()
         dlg.Destroy()
 
