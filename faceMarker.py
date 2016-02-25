@@ -193,7 +193,8 @@ class EyePickerFrame(wx.Frame):
                 row.append(point[0])
                 row.append(point[1])
             row.append(self.imageOrientation[key])
-            writer.writerow(row)
+            if (len(self.coords[key]) == self.n_points):
+                writer.writerow(row)
 
 
     def onSelect(self,event):
